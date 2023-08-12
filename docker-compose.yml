@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+
+  frontend:
+    container_name: frontend_app
+    build:
+      context: ./client
+      dockerfile: dockerfile.frontend
+    ports:
+      - '3000:3000'
+
+  appseed-app:
+    container_name: appseed_app
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    restart: always
+    env_file: .env
+    networks:
+      - db_network
+      - web_network
+
+  nginx:
+    container_name: nginx
+    restart: always
+    image: "nginx:latest"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - web_network
+    depends_on: 
+      - appseed-app 
+
+  redis:
+      container_name: redis
+      restart: always
+      image: "redis:latest"
+      env_file: .env
+      networks:
+        - db_network
+      command: redis-server --requirepass ${REDIS_PASSWORD}     
+
+
+networks:
+  web_network:
+    driver: bridge
+  db_network:
+    external: true
